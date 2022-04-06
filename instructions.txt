@@ -1,0 +1,19 @@
+pip install yelpapi
+
+on mac:
+pip3 install yelpapi 
+
+install python 3 on windows or mac 
+
+open cmd in windows command prompt or open terminal in mac 
+if you dont know how to open cmd or terminal search youtobe are a lot 1 min videos
+
+
+go from terminal you navigate to folder and run comand on python file 
+windows
+dir  -- is to list files
+cd (foldername) -- is to change directory 
+
+mac 
+ls - is to list files
+cd foldername -- is to change directory 
