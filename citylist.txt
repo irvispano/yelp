@@ -1,6 +1,7 @@
-venues
-anaheim,ca
-ontario,ca
-glendale,ca
-santa rosa,ca
-salinas,ca
+items;
+venues;
+anaheim,ca;
+ontario,ca;
+glendale,ca;
+santa rosa,ca;
+salinas,ca;

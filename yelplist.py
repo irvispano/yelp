@@ -1,34 +1,32 @@
-from ast import Str
+from ast import Str, keyword
 from pickletools import read_decimalnl_short
 from unicodedata import category
 from yelpapi import YelpAPI
 import csv
 import time
 import pickle
-#TODO keep track of api calls
+import datetime
+from keeptrack import keeptrack_f
+
+
 #TODO multiple city per keyword
 
 api_key='-51wNWXhiTASqFsoTz5YH67ZZI_FGV9EbDzPojWGlOk5Rl6gjSW2aLmBXS4zd761sNvGDl_Qcy4Rb4kKQ3ZlI5GbG9K79maajFpYnk8G_lNGyT4CdRFINnoWanAzYnYx'
 yelp_api = YelpAPI(api_key)
+counter_api=0
 
-def get_total(term_csv: str,location_csv: Str): 
-    "Gets total results from a search term on a specific location"
-    term=f'{term_csv}'
-    location=f'{location_csv}'
-    time.sleep(3)
-    search_results = yelp_api.search_query(categories=term,location=location,limit=50)
-    print(search_results)
-    print("======")
-    print(search_results['total'])
-    return search_results['total']
 def get_50_businesses_total(term_csv: str,location_csv: str,skipp: int): 
     "Gets 50 biz , total results "
     term=f'{term_csv}'
     location=f'{location_csv}'
-    time.sleep(3)
-    search_results = yelp_api.search_query(categories=term,location=location,limit=50,offset=skipp)
-    print(search_results)
-    print("======")
+    time.sleep(2)
+    counter_api_req=keeptrack_f()
+    if counter_api_req < 4900:
+        search_results = yelp_api.search_query(categories=term,location=location,limit=50,offset=skipp)
+        print(location,term)
+        print("Till now",counter_api_req,"Requests to Yelp for today")
+    # print(search_results)
+    # print("======")
     print(search_results['total'])
     return search_results['total'],search_results['businesses']
 
@@ -46,7 +44,7 @@ def write_to_csv(filename,columns,rows):
     """
     parameters filename, column names, rows(list of dict)
     """
-    with open(f'{filename}','w') as f:
+    with open(f'{filename}','a') as f:
         csv_writer = csv.DictWriter(f, columns,delimiter=';')
         csv_writer.writeheader()
         csv_writer.writerows(rows)       
@@ -86,44 +84,65 @@ list_of_dict_csv,columns=read_csv_to_list('yelp.csv')
 #         counter=write_10_results(column_pointer)  
 #         print("Counter",counter)
     # end iterate every 10 saves
-skippint=0
-total_businesses_start=100000000
-total_biz_fetched=[]
-biz_batch_of50_dict=[]
-keylock=1
-biz_listing={}
-while total_businesses_start >50:
-    print("skip",skippint)
-    total_businesses,biz_batch_of50=get_50_businesses_total("venues","anaheim,ca",skipp=skippint)
-    if keylock==1:
-        total_businesses_start=total_businesses
+
+def get_all_results_per_city(city,keyword):
+    skippint=0
+    total_businesses_start=100000000
+    total_biz_fetched=[]
+    biz_batch_of50_dict=[]
+    keylock=1
+    biz_listing={}
+    while total_businesses_start >50:
+        print("skip",skippint)
+        total_businesses,biz_batch_of50=get_50_businesses_total(keyword,city,skipp=skippint)
+        if keylock==1:
+            total_businesses_start=total_businesses
         
-    print("tot biz start",total_businesses_start)
-    if keylock==0:
-        total_businesses_start-=50
-    keylock=0 # for total biz start and for missing a turn    
-    skippint+=50
+        print("tot biz start",total_businesses_start)
+        if keylock==0:
+            total_businesses_start-=50
+        keylock=0 # for total biz start and for missing a turn    
+        skippint+=50
     
     
-    for el in biz_batch_of50:
-        biz_listing["id"]=el["id"]
-        biz_listing["city"]=el["location"]['city']
-        biz_listing["state"]=el["location"]['state']
-        biz_listing["zipcode"]=el["location"]['zip_code']
-        categories_list=str(el['categories'][0])
-        categories_list.strip("{").strip('}').strip("]").strip('[')
+        for el in biz_batch_of50:
+            biz_listing["id"]=el["id"]
+            biz_listing["city"]=el["location"]['city']
+            biz_listing["state"]=el["location"]['state']
+            biz_listing["zipcode"]=el["location"]['zip_code']
+            categories_list=str(el['categories'][0])
+            categories_list=categories_list.strip("{").strip('}').strip("]").strip('[')
         # if len(el['categories'])>1:
         #     for i in range(0,len(el['categories'])):
         #         categories_list.append(el['categories'][i]['alias'])
         # else:
         #     categories_list.append(el['categories'][i]['alias'])
         
-        biz_listing["categories"]=str(categories_list)
-        biz_listing["rating"]=el["rating"]
-        biz_listing["review_count"]=el["review_count"]
-        biz_listing["url"]=el["url"]
-        biz_listing["is_closed"]=el["is_closed"]
-        biz_listing["name"]=el["name"]
-        biz_batch_of50_dict.append(biz_listing.copy())
+            biz_listing["categories"]=str(categories_list)
+            biz_listing["rating"]=el["rating"]
+            biz_listing["review_count"]=el["review_count"]
+            biz_listing["url"]=el["url"]
+            biz_listing["is_closed"]=el["is_closed"]
+            biz_listing["name"]=el["name"]
+            if biz_listing["city"].lower()==city.split(",")[0].lower():
+                biz_batch_of50_dict.append(biz_listing.copy())
 # total_biz_fetched.append(biz_batch_of50_dict
-write_to_csv('yelpbizlist.csv',columns=["id","name","is_closed",'url','review_count','rating','categories','city','state','zipcode'],rows=biz_batch_of50_dict)
+    write_to_csv('yelpbizlist.csv',columns=["id","name","is_closed",'url','review_count','rating','categories','city','state','zipcode'],rows=biz_batch_of50_dict)
+def get_city_list_keyword():
+    f,columns=read_csv_to_list('citylist.txt')
+    
+    line=0 
+    citylist=[]
+    for row in f:
+        if line==0:
+            keyword=row
+            line=2
+        else:
+            citylist.append(row)
+    return citylist,keyword
+
+
+citylist,keyword=get_city_list_keyword()
+
+for city in citylist:
+    get_all_results_per_city(city['items'],keyword['items'])
