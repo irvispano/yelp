@@ -11,7 +11,7 @@ from keeptrack import keeptrack_f
 
 #TODO multiple city per keyword
 
-api_key='-51wNWXhiTASqFsoTz5YH67ZZI_FGV9EbDzPojWGlOk5Rl6gjSW2aLmBXS4zd761sNvGDl_Qcy4Rb4kKQ3ZlI5GbG9K79maajFpYnk8G_lNGyT4CdRFINnoWanAzYnYx'
+api_key='insert key'
 yelp_api = YelpAPI(api_key)
 counter_api=0
 
